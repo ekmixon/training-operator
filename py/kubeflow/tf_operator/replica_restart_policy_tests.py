@@ -103,57 +103,75 @@ class ReplicaRestartPolicyTests(test_util.TestCase):
   # We terminate PS with exit_code=0, and verify it is restarted.
   def test_restart_always_exit_code_0(self):
     return self.run_tfjob_with_replica_restart_policy(
-      REPLICA_RESTART_POLICY_ALWAYS_COMPONENT_NAME + "_" + self.tfjob_version,
-      "Always", 0)
+        f"{REPLICA_RESTART_POLICY_ALWAYS_COMPONENT_NAME}_{self.tfjob_version}",
+        "Always",
+        0,
+    )
 
   # Verify that the pod is restarted after the container exits with 1.
   # We terminate PS with exit_code=1, and verify it is restarted.
   def test_restart_always_exit_code_1(self):
     return self.run_tfjob_with_replica_restart_policy(
-      REPLICA_RESTART_POLICY_ALWAYS_COMPONENT_NAME + "_" + self.tfjob_version,
-      "Always", 1)
+        f"{REPLICA_RESTART_POLICY_ALWAYS_COMPONENT_NAME}_{self.tfjob_version}",
+        "Always",
+        1,
+    )
 
   # Verify that the pod is restarted after failure.
   # We terminate PS with exit_code=1, and verify it is restarted.
   def test_restart_onfailure_exit_code_1(self):
     return self.run_tfjob_with_replica_restart_policy(
-      REPLICA_RESTART_POLICY_ONFAILURE_COMPONENT_NAME + "_" +
-      self.tfjob_version, "OnFailure", 1)
+        (f"{REPLICA_RESTART_POLICY_ONFAILURE_COMPONENT_NAME}_" +
+         self.tfjob_version),
+        "OnFailure",
+        1,
+    )
 
   # Verify that the pod is restarted after failure.
   # We terminate PS with exit_code=0, and verify it is not restarted.
   def test_restart_onfailure_exit_code_0(self):
     return self.run_tfjob_with_replica_restart_policy(
-      REPLICA_RESTART_POLICY_ONFAILURE_COMPONENT_NAME + "_" +
-      self.tfjob_version, "OnFailure", 0)
+        (f"{REPLICA_RESTART_POLICY_ONFAILURE_COMPONENT_NAME}_" +
+         self.tfjob_version),
+        "OnFailure",
+        0,
+    )
 
   # Verify that the pod is never restarted.
   # We terminate PS with exit_code=1, and verify it is not restarted.
   def test_restart_never_exit_code_1(self):
     return self.run_tfjob_with_replica_restart_policy(
-      REPLICA_RESTART_POLICY_NEVER_COMPONENT_NAME + "_" + self.tfjob_version,
-      "Never", 1)
+        f"{REPLICA_RESTART_POLICY_NEVER_COMPONENT_NAME}_{self.tfjob_version}",
+        "Never",
+        1,
+    )
 
   # Verify that the pod is never restarted.
   # We terminate PS with exit_code=0, and verify it is not restarted.
   def test_restart_never_exit_code_0(self):
     return self.run_tfjob_with_replica_restart_policy(
-      REPLICA_RESTART_POLICY_NEVER_COMPONENT_NAME + "_" + self.tfjob_version,
-      "Never", 0)
+        f"{REPLICA_RESTART_POLICY_NEVER_COMPONENT_NAME}_{self.tfjob_version}",
+        "Never",
+        0,
+    )
 
   # Verify that the pod is not restarted after permanent error ( 1-127 ).
   # We terminate PS with exit_code=1, and verify its phase becomes Failed.
   def test_restart_exitcode_permanent_error(self):
     return self.run_tfjob_with_replica_restart_policy(
-      REPLICA_RESTART_POLICY_EXITCODE_COMPONENT_NAME + "_" + self.tfjob_version,
-      "ExitCode", 1)
+        f"{REPLICA_RESTART_POLICY_EXITCODE_COMPONENT_NAME}_{self.tfjob_version}",
+        "ExitCode",
+        1,
+    )
 
   # Verify that the pod is not restarted after retryable error.
   # We terminate PS with exit_code=130, and verify it is restarted.
   def test_restart_exitcode_retryable_error(self):
     return self.run_tfjob_with_replica_restart_policy(
-      REPLICA_RESTART_POLICY_EXITCODE_COMPONENT_NAME + "_" + self.tfjob_version,
-      "ExitCode", 130)
+        f"{REPLICA_RESTART_POLICY_EXITCODE_COMPONENT_NAME}_{self.tfjob_version}",
+        "ExitCode",
+        130,
+    )
 
 
 if __name__ == "__main__":

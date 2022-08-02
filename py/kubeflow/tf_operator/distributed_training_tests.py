@@ -62,10 +62,8 @@ class DistributedTrainingJobTests(test_util.TestCase):
       logging.error(self.failure)
       return
 
-    # Check for creation failures.
-    creation_failures = tf_job_client.get_creation_failures_from_tfjob(
-      api_client, self.namespace, results)
-    if creation_failures:
+    if creation_failures := tf_job_client.get_creation_failures_from_tfjob(
+        api_client, self.namespace, results):
       logging.warning(creation_failures)
 
     # Delete the TFJob.
@@ -83,8 +81,8 @@ class DistributedTrainingJobTests(test_util.TestCase):
   # Run a distributed training TFJob, wait for it to complete, and check for pod/service
   # creation errors.
   def test_distributed_training_independent_worker(self):
-    self.run_distributed_training_job(TFJOB_COMPONENT_NAME + "_" +
-                                      self.tfjob_version)
+    self.run_distributed_training_job(
+        (f"{TFJOB_COMPONENT_NAME}_" + self.tfjob_version))
 
 
 if __name__ == "__main__":

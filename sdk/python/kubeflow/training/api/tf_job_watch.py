@@ -44,9 +44,7 @@ def watch(name=None, namespace=None, timeout_seconds=600):
     for event in stream:
         tfjob = event['object']
         tfjob_name = tfjob['metadata']['name']
-        if name and name != tfjob_name:
-            continue
-        else:
+        if not name or name == tfjob_name:
             status = ''
             update_time = ''
             last_condition = tfjob.get('status', {}).get('conditions', [{}])[-1]
@@ -55,6 +53,8 @@ def watch(name=None, namespace=None, timeout_seconds=600):
 
             tbl(tfjob_name, status, update_time)
 
-            if name == tfjob_name:
-                if status in [constants.JOB_STATUS_SUCCEEDED, constants.JOB_STATUS_FAILED]:
-                    break
+        if name == tfjob_name and status in [
+            constants.JOB_STATUS_SUCCEEDED,
+            constants.JOB_STATUS_FAILED,
+        ]:
+            break

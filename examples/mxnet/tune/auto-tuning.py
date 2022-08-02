@@ -46,7 +46,7 @@ def get_network(name, batch_size):
         net, params = nnvm.frontend.from_mxnet(block)
         net = nnvm.sym.softmax(net)
     else:
-        raise ValueError("Unsupported network: " + name)
+        raise ValueError(f"Unsupported network: {name}")
 
     return net, params, input_shape, output_shape
 
@@ -59,12 +59,13 @@ def get_network(name, batch_size):
 
     return sym, params, input_shape, output_shape'''
 
+
 #### DEVICE CONFIG ####
 target = tvm.target.cuda()
 
 #### TUNING OPTION ####
 network = 'resnet-18'
-log_file = "%s.log" % network
+log_file = f"{network}.log"
 dtype = 'float32'
 
 # You can skip the implementation of this function for this tutorial.
@@ -88,7 +89,7 @@ def tune_tasks(tasks,
                 pass
 
     # create tmp log file
-    tmp_log_file = log_filename + ".tmp"
+    tmp_log_file = f"{log_filename}.tmp"
     if os.path.exists(tmp_log_file):
         os.remove(tmp_log_file)
 
@@ -96,7 +97,7 @@ def tune_tasks(tasks,
         prefix = "[Task %2d/%2d] " %(i+1, len(tasks))
 
         # create tuner
-        if tuner == 'xgb' or tuner == 'xgb-rank':
+        if tuner in ['xgb', 'xgb-rank']:
             tuner_obj = XGBTuner(tsk, loss_type='rank')
         elif tuner == 'ga':
             tuner_obj = GATuner(tsk, pop_size=100)
@@ -105,11 +106,10 @@ def tune_tasks(tasks,
         elif tuner == 'gridsearch':
             tuner_obj = GridSearchTuner(tsk)
         else:
-            raise ValueError("Invalid tuner: " + tuner)
+            raise ValueError(f"Invalid tuner: {tuner}")
 
-        if use_transfer_learning:
-            if os.path.isfile(tmp_log_file):
-                tuner_obj.load_history(autotvm.record.load_from_file(tmp_log_file))
+        if use_transfer_learning and os.path.isfile(tmp_log_file):
+            tuner_obj.load_history(autotvm.record.load_from_file(tmp_log_file))
 
         # do tuning
         tuner_obj.tune(n_trial=min(n_trial, len(tsk.config_space)),

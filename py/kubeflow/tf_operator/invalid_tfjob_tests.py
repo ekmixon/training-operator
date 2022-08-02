@@ -26,7 +26,7 @@ class InvalidTfJobTests(test_util.TestCase):
   def test_invalid_tfjob_spec(self):
     tf_operator_util.load_kube_config()
     api_client = k8s_client.ApiClient()
-    component = INVALID_TFJOB_COMPONENT_NAME + "_" + self.tfjob_version
+    component = f"{INVALID_TFJOB_COMPONENT_NAME}_{self.tfjob_version}"
 
     # Setup the ksonnet app
     tf_operator_util.setup_ks_app(self.app_dir, self.env, self.namespace, component,

@@ -42,7 +42,7 @@ class TestSuite(object):
       ValueError: If a test case with the specified name already exists.
     """
     if name in self._cases:
-      raise ValueError("TestSuite already has a test named %s" % name)
+      raise ValueError(f"TestSuite already has a test named {name}")
     self._cases[name] = TestCase()
     self._cases[name].class_name = self._class_name
     self._cases[name].name = name
@@ -60,8 +60,8 @@ class TestSuite(object):
     Raises:
       KeyError: If no test with that name exists.
     """
-    if not name in self._cases:
-      raise KeyError("No TestCase named %s" % name)
+    if name not in self._cases:
+      raise KeyError(f"No TestCase named {name}")
     return self._cases[name]
 
   def __iter__(self):
@@ -89,7 +89,7 @@ def wrap_test(test_func, test_case):
     test_case.failure = ("Subprocess failed;\n{0}".format(e.output))
     raise
   except Exception as e:
-    test_case.failure = "Test failed; " + e.message
+    test_case.failure = f"Test failed; {e.message}"
     raise
   finally:
     test_case.time = time.time() - start
@@ -141,8 +141,7 @@ def create_xml(test_cases):
       f.text = c.failure
       e.append(f)
 
-  t = ElementTree.ElementTree(root)
-  return t
+  return ElementTree.ElementTree(root)
 
 
 def create_junit_xml_file(test_cases, output_path, gcs_client=None):
@@ -173,12 +172,7 @@ def create_junit_xml_file(test_cases, output_path, gcs_client=None):
       try:
         os.makedirs(dir_name)
       except OSError as e:
-        if e.errno == errno.EEXIST:
-          # The path already exists. This is probably a race condition
-          # with some other test creating the directory.
-          # We should just be able to continue
-          pass
-        else:
+        if e.errno != errno.EEXIST:
           raise
     t.write(output_path)
 

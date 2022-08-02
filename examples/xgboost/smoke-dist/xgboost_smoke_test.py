@@ -54,10 +54,11 @@ def setup_rabit_cluster():
 
             envs = [
                 'DMLC_NUM_WORKER=%d' % world_size,
-                'DMLC_TRACKER_URI=%s' % addr,
+                f'DMLC_TRACKER_URI={addr}',
                 'DMLC_TRACKER_PORT=%d' % port,
-                'DMLC_TASK_ID=%d' % rank
+                'DMLC_TASK_ID=%d' % rank,
             ]
+
             logger.info('##### Rabit rank setup with below envs #####')
             for i, env in enumerate(envs):
                 logger.info(env)
@@ -67,10 +68,7 @@ def setup_rabit_cluster():
             logger.info('##### Rabit rank = %d' % xgb.rabit.get_rank())
 
             rank = xgb.rabit.get_rank()
-            s = None
-            if rank == 0:
-                s = {'hello world': 100, 2: 3}
-
+            s = {'hello world': 100, 2: 3} if rank == 0 else None
             logger.info('@node[%d] before-broadcast: s=\"%s\"' % (rank, str(s)))
             s = xgb.rabit.broadcast(s, 0)
 

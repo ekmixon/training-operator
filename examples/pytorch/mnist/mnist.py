@@ -112,7 +112,7 @@ def main():
     device = torch.device("cuda" if use_cuda else "cpu")
 
     if should_distribute():
-        print('Using distributed PyTorch with {} backend'.format(args.backend))
+        print(f'Using distributed PyTorch with {args.backend} backend')
         dist.init_process_group(backend=args.backend)
 
     kwargs = {'num_workers': 1, 'pin_memory': True} if use_cuda else {}

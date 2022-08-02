@@ -185,14 +185,16 @@ class V1SchedulingPolicy(object):
 
     def __eq__(self, other):
         """Returns true if both objects are equal"""
-        if not isinstance(other, V1SchedulingPolicy):
-            return False
-
-        return self.to_dict() == other.to_dict()
+        return (
+            self.to_dict() == other.to_dict()
+            if isinstance(other, V1SchedulingPolicy)
+            else False
+        )
 
     def __ne__(self, other):
         """Returns true if both objects are not equal"""
-        if not isinstance(other, V1SchedulingPolicy):
-            return True
-
-        return self.to_dict() != other.to_dict()
+        return (
+            self.to_dict() != other.to_dict()
+            if isinstance(other, V1SchedulingPolicy)
+            else True
+        )

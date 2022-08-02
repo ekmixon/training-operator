@@ -65,12 +65,7 @@ def run(server, cluster_spec):  # pylint: disable=too-many-statements, too-many-
 
     init_op = tf.global_variables_initializer()
 
-    if server:
-      target = server.target
-    else:
-      # Create a direct session.
-      target = ""
-
+    target = server.target if server else ""
     logging.info("Server target: %s", target)
     with tf.Session(
             target, config=tf.ConfigProto(log_device_placement=True)) as sess:
@@ -139,7 +134,7 @@ def main():
     with tf.device(device_func):
       run(server=server, cluster_spec=cluster_spec)
   else:
-    raise ValueError("invalid job_type %s" % (job_type,))
+    raise ValueError(f"invalid job_type {job_type}")
 
 
 if __name__ == "__main__":

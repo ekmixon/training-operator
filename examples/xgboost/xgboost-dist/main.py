@@ -21,10 +21,10 @@ from utils import dump_model
 def main(args):
 
     model_storage_type = args.model_storage_type
-    if (model_storage_type == "local" or model_storage_type == "oss"):
-      print ( "The storage type is " + model_storage_type)
+    if model_storage_type in ["local", "oss"]:
+        print(f"The storage type is {model_storage_type}")
     else:
-      raise Exception("Only supports storage types like local and OSS")
+        raise Exception("Only supports storage types like local and OSS")
 
     if args.job_type == "Predict":
         logging.info("starting the predict job")

@@ -99,7 +99,7 @@ class TFJobClient(object):
         return outputs
 
     def get(self, name=None, namespace=None, watch=False,
-            timeout_seconds=600):  # pylint: disable=inconsistent-return-statements
+            timeout_seconds=600):    # pylint: disable=inconsistent-return-statements
         """
         Get the tfjob
         :param name: existing tfjob name, if not defined, the get all tfjobs in the namespace.
@@ -140,33 +140,32 @@ class TFJobClient(object):
                         "There was a problem to get TFJob {0} in namespace {1}. Exception: \
                         {2} ".format(name, namespace, e))
                 return tfjob
+        elif watch:
+            tfjob_watch(
+                namespace=namespace,
+                timeout_seconds=timeout_seconds)
         else:
-            if watch:
-                tfjob_watch(
-                    namespace=namespace,
-                    timeout_seconds=timeout_seconds)
-            else:
-                thread = self.custom_api.list_namespaced_custom_object(
-                    constants.TFJOB_GROUP,
-                    constants.TFJOB_VERSION,
-                    namespace,
-                    constants.TFJOB_PLURAL,
-                    async_req=True)
+            thread = self.custom_api.list_namespaced_custom_object(
+                constants.TFJOB_GROUP,
+                constants.TFJOB_VERSION,
+                namespace,
+                constants.TFJOB_PLURAL,
+                async_req=True)
 
-                tfjobs = None
-                try:
-                    tfjobs = thread.get(constants.APISERVER_TIMEOUT)
-                except multiprocessing.TimeoutError:
-                    raise RuntimeError("Timeout trying to get TFJob.")
-                except client.rest.ApiException as e:
-                    raise RuntimeError(
-                        "Exception when calling CustomObjectsApi->list_namespaced_custom_object:\
+            tfjobs = None
+            try:
+                tfjobs = thread.get(constants.APISERVER_TIMEOUT)
+            except multiprocessing.TimeoutError:
+                raise RuntimeError("Timeout trying to get TFJob.")
+            except client.rest.ApiException as e:
+                raise RuntimeError(
+                    "Exception when calling CustomObjectsApi->list_namespaced_custom_object:\
                         %s\n" % e)
-                except Exception as e:
-                    raise RuntimeError(
-                        "There was a problem to list TFJobs in namespace {0}. \
+            except Exception as e:
+                raise RuntimeError(
+                    "There was a problem to list TFJobs in namespace {0}. \
                         Exception: {1} ".format(namespace, e))
-                return tfjobs
+            return tfjobs
 
     def patch(self, name, tfjob, namespace=None):
         """
@@ -359,15 +358,14 @@ class TFJobClient(object):
             raise RuntimeError(
                 "Exception when calling CoreV1Api->read_namespaced_pod_log: %s\n" % e)
 
-        pod_names = []
-        for pod in resp.items:
-            if pod.metadata and pod.metadata.name:
-                pod_names.append(pod.metadata.name)
-
-        if not pod_names:
-            logging.warning("Not found Pods of the TFJob %s with the labels %s.", name, labels)
-        else:
+        if pod_names := [
+            pod.metadata.name
+            for pod in resp.items
+            if pod.metadata and pod.metadata.name
+        ]:
             return set(pod_names)
+        else:
+            logging.warning("Not found Pods of the TFJob %s with the labels %s.", name, labels)
 
     def get_logs(self, name, namespace=None, master=True,
                  replica_type=None, replica_index=None,
@@ -390,46 +388,59 @@ class TFJobClient(object):
         if namespace is None:
             namespace = utils.get_default_target_namespace()
 
-        pod_names = list(self.get_pod_names(name, namespace=namespace,
-                                            master=master,
-                                            replica_type=replica_type,
-                                            replica_index=replica_index))
-        if pod_names:
-            if follow:
-                log_streams = []
-                for pod in pod_names:
-                    log_streams.append(k8s_watch.Watch().stream(self.core_api.read_namespaced_pod_log,
-                                                                name=pod, namespace=namespace, container=container))
-                finished = [False for _ in log_streams]
+        if not (
+            pod_names := list(
+                self.get_pod_names(
+                    name,
+                    namespace=namespace,
+                    master=master,
+                    replica_type=replica_type,
+                    replica_index=replica_index,
+                )
+            )
+        ):
+            raise RuntimeError(
+                f"Not found Pods of the TFJob {name} in namespace {namespace}"
+            )
 
-                # create thread and queue per stream, for non-blocking iteration
-                log_queue_pool = get_log_queue_pool(log_streams)
+        if follow:
+            log_streams = [
+                k8s_watch.Watch().stream(
+                    self.core_api.read_namespaced_pod_log,
+                    name=pod,
+                    namespace=namespace,
+                    container=container,
+                )
+                for pod in pod_names
+            ]
 
-                # iterate over every watching pods' log queue
-                while True:
-                    for index, log_queue in enumerate(log_queue_pool):
-                        if all(finished):
-                            return
-                        if finished[index]:
-                            continue
-                        # grouping the every 50 log lines of the same pod
-                        for _ in range(50):
-                            try:
-                                logline = log_queue.get(timeout=1)
-                                if logline is None:
-                                    finished[index] = True
-                                    break
-                                logging.info("[Pod %s]: %s", pod_names[index], logline)
-                            except queue.Empty:
+            finished = [False for _ in log_streams]
+
+            # create thread and queue per stream, for non-blocking iteration
+            log_queue_pool = get_log_queue_pool(log_streams)
+
+            # iterate over every watching pods' log queue
+            while True:
+                for index, log_queue in enumerate(log_queue_pool):
+                    if all(finished):
+                        return
+                    if finished[index]:
+                        continue
+                    # grouping the every 50 log lines of the same pod
+                    for _ in range(50):
+                        try:
+                            logline = log_queue.get(timeout=1)
+                            if logline is None:
+                                finished[index] = True
                                 break
-            else:
-                for pod in pod_names:
-                    try:
-                        pod_logs = self.core_api.read_namespaced_pod_log(pod, namespace, container=container)
-                        logging.info("The logs of Pod %s:\n %s", pod, pod_logs)
-                    except client.rest.ApiException as e:
-                        raise RuntimeError(
-                            "Exception when calling CoreV1Api->read_namespaced_pod_log: %s\n" % e)
+                            logging.info("[Pod %s]: %s", pod_names[index], logline)
+                        except queue.Empty:
+                            break
         else:
-            raise RuntimeError("Not found Pods of the TFJob {} "
-                               "in namespace {}".format(name, namespace))
+            for pod in pod_names:
+                try:
+                    pod_logs = self.core_api.read_namespaced_pod_log(pod, namespace, container=container)
+                    logging.info("The logs of Pod %s:\n %s", pod, pod_logs)
+                except client.rest.ApiException as e:
+                    raise RuntimeError(
+                        "Exception when calling CoreV1Api->read_namespaced_pod_log: %s\n" % e)

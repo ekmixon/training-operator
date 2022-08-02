@@ -35,32 +35,32 @@ def verify_runconfig(master_host, namespace, job_name, replica, num_ps,
   """
   is_chief = True
   num_replicas = 1
-  if replica == "ps":
+  if replica == "evaluator":
+    is_chief = False
+    num_replicas = num_evaluators
+
+  elif replica == "ps":
     is_chief = False
     num_replicas = num_ps
   elif replica == "worker":
     is_chief = False
     num_replicas = num_workers
-  elif replica == "evaluator":
-    is_chief = False
-    num_replicas = num_evaluators
-
   # Construct the expected cluster spec
   chief_list = [
     "{name}-chief-0.{ns}.svc:2222".format(name=job_name, ns=namespace)
   ]
-  ps_list = []
-  for i in range(num_ps):
-    ps_list.append("{name}-ps-{index}.{ns}.svc:2222".format(
-      name=job_name, index=i, ns=namespace))
-  worker_list = []
-  for i in range(num_workers):
-    worker_list.append("{name}-worker-{index}.{ns}.svc:2222".format(
-      name=job_name, index=i, ns=namespace))
-  evaluator_list = []
-  for i in range(num_evaluators):
-    evaluator_list.append("{name}-evaluator-{index}.{ns}.svc:2222".format(
-      name=job_name, index=i, ns=namespace))
+  ps_list = [
+      "{name}-ps-{index}.{ns}.svc:2222".format(
+          name=job_name, index=i, ns=namespace) for i in range(num_ps)
+  ]
+  worker_list = [
+      "{name}-worker-{index}.{ns}.svc:2222".format(
+          name=job_name, index=i, ns=namespace) for i in range(num_workers)
+  ]
+  evaluator_list = [
+      "{name}-evaluator-{index}.{ns}.svc:2222".format(
+          name=job_name, index=i, ns=namespace) for i in range(num_evaluators)
+  ]
   cluster_spec = {
     "chief": chief_list,
     "ps": ps_list,
@@ -74,24 +74,24 @@ def verify_runconfig(master_host, namespace, job_name, replica, num_ps,
       name=job_name, replica=replica.lower(), index=i)
     actual_config = get_runconfig(master_host, namespace, full_target)
     full_svc = "{ft}.{ns}.svc".format(ft=full_target, ns=namespace)
-    expected_config = {
-      "task_type": replica,
-      "task_id": i,
-      "cluster_spec": cluster_spec,
-      "is_chief": is_chief,
-      "master": "grpc://{fs}:2222".format(fs=full_svc),
-      "num_worker_replicas": num_workers + 1,  # Chief is also a worker
-      "num_ps_replicas": num_ps,
-    } if not replica == "evaluator" else {
-      # Evaluator has special config.
-      "task_type": replica,
-      "task_id": 0,
-      "cluster_spec": {},
-      "is_chief": is_chief,
-      "master": "",
-      "num_worker_replicas": 0,
-      "num_ps_replicas": 0,
-    }
+    expected_config = ({
+        "task_type": replica,
+        "task_id": i,
+        "cluster_spec": cluster_spec,
+        "is_chief": is_chief,
+        "master": "grpc://{fs}:2222".format(fs=full_svc),
+        "num_worker_replicas": num_workers + 1,  # Chief is also a worker
+        "num_ps_replicas": num_ps,
+    } if replica != "evaluator" else {
+        # Evaluator has special config.
+        "task_type": replica,
+        "task_id": 0,
+        "cluster_spec": {},
+        "is_chief": is_chief,
+        "master": "",
+        "num_worker_replicas": 0,
+        "num_ps_replicas": 0,
+    })
 
     # Compare expected and actual configs
     if actual_config != expected_config:
@@ -118,7 +118,7 @@ class EstimatorRunconfigTests(test_util.TestCase):
     tf_operator_util.load_kube_config()
     api_client = k8s_client.ApiClient()
     masterHost = api_client.configuration.host
-    component = COMPONENT_NAME + "_" + self.tfjob_version
+    component = f"{COMPONENT_NAME}_{self.tfjob_version}"
 
     # Setup the ksonnet app
     tf_operator_util.setup_ks_app(self.app_dir, self.env, self.namespace, component,

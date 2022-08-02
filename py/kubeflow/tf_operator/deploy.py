@@ -77,7 +77,7 @@ def ks_deploy(app_dir, component, params, env=None, account=None):
   # and config can be submitted in the same pr.
   now = datetime.datetime.now()
   if not env:
-    env = "e2e-" + now.strftime("%m%d-%H%M-") + uuid.uuid4().hex[0:4]
+    env = "e2e-" + now.strftime("%m%d-%H%M-") + uuid.uuid4().hex[:4]
 
   logging.info("Using app directory: %s", app_dir)
 
@@ -91,12 +91,12 @@ def ks_deploy(app_dir, component, params, env=None, account=None):
       raise
 
   for k, v in params.items():
-    util.run([ks_cmd, "param", "set", "--env=" + env, component, k, v],
+    util.run([ks_cmd, "param", "set", f"--env={env}", component, k, v],
              cwd=app_dir)
 
   apply_command = [ks_cmd, "apply", env, "-c", component]
   if account:
-    apply_command.append("--as=" + account)
+    apply_command.append(f"--as={account}")
   util.run(apply_command, cwd=app_dir)
 
 @retrying.retry(stop_max_attempt_number=3)
@@ -160,8 +160,12 @@ def setup_cluster(args):
         ["gcloud", "config", "get-value", "account", "--quiet"]).strip()
       logging.info("Using GCP account %s", account)
       util.run([
-        "kubectl", "create", "clusterrolebinding", "default-admin",
-        "--clusterrole=cluster-admin", "--user=" + account
+          "kubectl",
+          "create",
+          "clusterrolebinding",
+          "default-admin",
+          "--clusterrole=cluster-admin",
+          f"--user={account}",
       ])
 
     _setup_namespace(api_client, args.namespace)
@@ -169,8 +173,6 @@ def setup_cluster(args):
     # Setup GPUs.
     util.setup_cluster(api_client)
 
-  # Reraise the exception so that the step fails because there's no point
-  # continuing the test.
   except subprocess.CalledProcessError as e:
     t.failure = "setup-cluster failed;\n" + (e.output or "")
     raise
@@ -290,7 +292,7 @@ def add_common_args(parser):
     help="Where to write the junit xml file with the results.")
 
 
-def main():  # pylint: disable=too-many-locals
+def main():# pylint: disable=too-many-locals
   logging.getLogger().setLevel(logging.INFO)  # pylint: disable=too-many-locals
 
   util.maybe_activate_service_account()
@@ -314,9 +316,9 @@ def main():  # pylint: disable=too-many-locals
     help="Accelerator to add to the cluster. Should be of the form type=count.")
 
   parser_setup.add_argument(
-    "--namespace",
-    default="kubeflow-" + now.strftime("%m%d-%H%M-") + uuid.uuid4().hex[0:4],
-    help="The directory containing the ksonnet app used for testing.",
+      "--namespace",
+      default="kubeflow-" + now.strftime("%m%d-%H%M-") + uuid.uuid4().hex[:4],
+      help="The directory containing the ksonnet app used for testing.",
   )
   parser_setup.set_defaults(func=setup_cluster)
   add_common_args(parser_setup)
@@ -327,9 +329,9 @@ def main():  # pylint: disable=too-many-locals
   parser_kubeflow.set_defaults(func=setup_kubeflow)
 
   parser_kubeflow.add_argument(
-    "--namespace",
-    default="kubeflow-" + now.strftime("%m%d-%H%M-") + uuid.uuid4().hex[0:4],
-    help="The directory containing the ksonnet app used for testing.",
+      "--namespace",
+      default="kubeflow-" + now.strftime("%m%d-%H%M-") + uuid.uuid4().hex[:4],
+      help="The directory containing the ksonnet app used for testing.",
   )
 
   parser_kubeflow.add_argument(

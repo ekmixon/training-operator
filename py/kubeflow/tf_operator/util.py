@@ -62,9 +62,7 @@ def run(command, cwd=None, env=None, dryrun=False):
     env.update(extra_envs)
     keys = sorted(env.keys())
 
-    lines = []
-    for k in keys:
-      lines.append("{0}={1}".format(k, env[k]))
+    lines = ["{0}={1}".format(k, env[k]) for k in keys]
     logging.info("Running: Environment:\n%s", "\n".join(lines))
 
   log_file = None
@@ -118,9 +116,7 @@ def send_request(master_host, namespace, target, rpc, params):
   res = subprocess.check_output(["aws", "eks", "get-token", "--cluster-name", cluster_name])
   res = json.loads(res)
   token = res["status"]["token"]
-  headers = {
-    "Authorization": "Bearer " + token.strip(),
-  }
+  headers = {"Authorization": f"Bearer {token.strip()}"}
   url = ("{master}/api/v1/namespaces/{namespace}/services/{service}:2222"
          "/proxy/{rpc}").format(
            master=master_host, namespace=namespace, service=target, rpc=rpc)
@@ -203,7 +199,7 @@ def install_go_deps(src_dir):
 
 def to_gcs_uri(bucket, path):
   """Convert bucket and path to a GCS URI."""
-  return "gs://" + os.path.join(bucket, path)
+  return f"gs://{os.path.join(bucket, path)}"
 
 
 def create_cluster(gke, project, zone, cluster_request):
@@ -230,9 +226,7 @@ def create_cluster(gke, project, zone, cluster_request):
     logging.error("Exception occured creating cluster: %s, status: %s", e,
                   e.resp["status"])
     # Status appears to be a string.
-    if e.resp["status"] == '409':
-      pass
-    else:
+    if e.resp["status"] != '409':
       raise
 
 
@@ -309,8 +303,13 @@ def wait_for_operation(client,
 def configure_kubectl(project, zone, cluster_name):
   logging.info("Configuring kubectl")
   run([
-    "gcloud", "--project=" + project, "container", "clusters", "--zone=" + zone,
-    "get-credentials", cluster_name
+      "gcloud",
+      f"--project={project}",
+      "container",
+      "clusters",
+      f"--zone={zone}",
+      "get-credentials",
+      cluster_name,
   ])
 
 
@@ -433,10 +432,8 @@ def cluster_has_gpu_nodes(api_client):
   api = k8s_client.CoreV1Api(api_client)
   nodes = api.list_node()
 
-  for n in nodes.items:
-    if "cloud.google.com/gke-accelerator" in n.metadata.labels:
-      return True
-  return False
+  return any("cloud.google.com/gke-accelerator" in n.metadata.labels
+             for n in nodes.items)
 
 
 def setup_cluster(api_client):
@@ -484,9 +481,7 @@ def split_gcs_uri(gcs_uri):
   """Split a GCS URI into bucket and path."""
   m = GCS_REGEX.match(gcs_uri)
   bucket = m.group(1)
-  path = ""
-  if m.group(2):
-    path = m.group(2).lstrip("/")
+  path = m.group(2).lstrip("/") if m.group(2) else ""
   return bucket, path
 
 
@@ -575,8 +570,17 @@ def setup_ks_app(app_dir, env, namespace, component, params, ks_cmd=None):
     # Create a new environment for this run
     try:
       # FIXME: hardcoded the api-spec for aws test
-      util.run([ks_cmd, "env", "add", env, "--api-spec=version:v1.13.0", "--namespace=" + namespace],
-                cwd=app_dir)
+      util.run(
+          [
+              ks_cmd,
+              "env",
+              "add",
+              env,
+              "--api-spec=version:v1.13.0",
+              f"--namespace={namespace}",
+          ],
+          cwd=app_dir,
+      )
     except subprocess.CalledProcessError as e:
       if not re.search(".*environment.*already exists.*", e.output):
         raise
@@ -584,5 +588,7 @@ def setup_ks_app(app_dir, env, namespace, component, params, ks_cmd=None):
     if params:
       for pair in params.split(","):
         k, v = pair.split("=", 1)
-        util.run([ks_cmd, "param", "set", "--env=" + env, component, k, v],
-                  cwd=app_dir)
+        util.run(
+            [ks_cmd, "param", "set", f"--env={env}", component, k, v],
+            cwd=app_dir,
+        )

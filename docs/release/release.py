@@ -40,4 +40,4 @@ faf34868 fix: Remove the dup comment tag (#1274)
 g = ChangelogGenerator("kubeflow/training-operator")
 for pr_match in re.finditer(r"#(\d+)", payload):
     pr_id = int(pr_match.group(1))
-    print("* {}".format(g.generate(pr_id)))
+    print(f"* {g.generate(pr_id)}")

@@ -102,17 +102,17 @@ class CleanPodPolicyTests(test_util.TestCase):
   # Verify that all pods are deleted when the job completes.
   def test_cleanpod_all(self):
     return self.run_tfjob_with_cleanpod_policy(
-      CLEANPOD_ALL_COMPONENT_NAME + "_" + self.tfjob_version, "All")
+        f"{CLEANPOD_ALL_COMPONENT_NAME}_{self.tfjob_version}", "All")
 
   # Verify that running pods are deleted when the job completes.
   def test_cleanpod_running(self):
     return self.run_tfjob_with_cleanpod_policy(
-      CLEANPOD_RUNNING_COMPONENT_NAME + "_" + self.tfjob_version, "Running")
+        f"{CLEANPOD_RUNNING_COMPONENT_NAME}_{self.tfjob_version}", "Running")
 
   # Verify that none of the pods are deleted when the job completes.
   def test_cleanpod_none(self):
     return self.run_tfjob_with_cleanpod_policy(
-      CLEANPOD_NONE_COMPONENT_NAME + "_" + self.tfjob_version, "None")
+        f"{CLEANPOD_NONE_COMPONENT_NAME}_{self.tfjob_version}", "None")
 
 
 if __name__ == "__main__":

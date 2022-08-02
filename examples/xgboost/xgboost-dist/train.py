@@ -43,10 +43,11 @@ def train(args):
 
             envs = [
                 'DMLC_NUM_WORKER=%d' % world_size,
-                'DMLC_TRACKER_URI=%s' % addr,
+                f'DMLC_TRACKER_URI={addr}',
                 'DMLC_TRACKER_PORT=%d' % port,
-                'DMLC_TASK_ID=%d' % rank
+                'DMLC_TASK_ID=%d' % rank,
             ]
+
             logger.info('##### Rabit rank setup with below envs #####')
             for i, env in enumerate(envs):
                 logger.info(env)
@@ -61,21 +62,18 @@ def train(args):
             logging.info("Start the train in a single node")
 
         df = read_train_data(rank=rank, num_workers=world_size, path=None)
-        kwargs = {}
-        kwargs["dtrain"] = df
-        kwargs["num_boost_round"] = int(args.n_estimators)
         param_xgboost_default = {'max_depth': 2, 'eta': 1, 'silent': 1,
                                  'objective': 'multi:softprob', 'num_class': 3}
-        kwargs["params"] = param_xgboost_default
+        kwargs = {
+            "dtrain": df,
+            "num_boost_round": int(args.n_estimators),
+            "params": param_xgboost_default,
+        }
 
         logging.info("starting to train xgboost at node with rank %d", rank)
         bst = xgb.train(**kwargs)
 
-        if rank == 0:
-            model = bst
-        else:
-            model = None
-
+        model = bst if rank == 0 else None
         logging.info("finish xgboost training at node with rank %d", rank)
 
     except Exception as e:

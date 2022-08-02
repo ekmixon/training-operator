@@ -17,21 +17,21 @@ if __name__ == '__main__':
     elif task_type == "tunertracker":
         addr = cluster_config["tunertracker"][0]
         command = "python3 -m tvm.exec.rpc_tracker --port={0}".format(addr.get('port'))
-        print("DO: " + command)
+        print(f"DO: {command}")
         os.system(command)
     elif task_type == "tunerserver":
         time.sleep(5)
         addr = cluster_config["tunertracker"][0]
         label = labels_config["tunerserver"]
         command = "python3 -m tvm.exec.rpc_server --tracker={0}:{1} --key={2}".format(addr.get('url'), addr.get('port'), label)
-        print("DO: " + command)
+        print(f"DO: {command}")
         os.system(command)
     elif task_type == "tuner":
         time.sleep(5)
         addr = cluster_config["tunertracker"][0]
         label = labels_config["tunerserver"]
         command = "python3 /home/scripts/auto-tuning.py --tracker {0} --tracker_port {1} --server_key {2}".format(addr.get('url'), addr.get('port'), label)
-        print("DO: " + command)
+        print(f"DO: {command}")
         os.system(command)
     else:
         print("Unknow task type! Error")

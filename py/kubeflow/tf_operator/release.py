@@ -68,8 +68,8 @@ def update_chart(chart_file, version):
   """Append the version number to the version number in chart.yaml"""
   with open(chart_file) as hf:
     info = yaml.load(hf)
-  info["version"] += "-" + version
-  info["appVersion"] += "-" + version
+  info["version"] += f"-{version}"
+  info["appVersion"] += f"-{version}"
 
   with open(chart_file, "w") as hf:
     yaml.dump(info, hf)
@@ -183,20 +183,24 @@ def build_operator_image(root_dir,
     else:
       shutil.copyfile(src_path, dest_path)
 
-  image_base = registry + "/tf_operator"
+  image_base = f"{registry}/tf_operator"
 
   if not version_tag:
     logging.info("No version tag specified; computing tag automatically.")
     n = datetime.datetime.now()
     version_tag = n.strftime("v%Y%m%d") + "-" + commit
   logging.info("Using version tag: %s", version_tag)
-  image = image_base + ":" + version_tag
-  latest_image = image_base + ":latest"
+  image = f"{image_base}:{version_tag}"
+  latest_image = f"{image_base}:latest"
 
   if project:
     util.run([
-      "gcloud", "builds", "submit", context_dir, "--tag=" + image,
-      "--project=" + project
+        "gcloud",
+        "builds",
+        "submit",
+        context_dir,
+        f"--tag={image}",
+        f"--project={project}",
     ])
 
     # Add the latest tag.
@@ -213,11 +217,10 @@ def build_operator_image(root_dir,
     if should_push:
       _push_image(image, latest_image)
 
-  output = {
-    "image": image,
-    "commit": commit,
+  return {
+      "image": image,
+      "commit": commit,
   }
-  return output
 
 
 def _push_image(image, latest_image):
@@ -226,14 +229,13 @@ def _push_image(image, latest_image):
     logging.info("Pushed image: %s", image)
 
     util.run(["gcloud", "docker", "--", "push", latest_image])
-    logging.info("Pushed image: %s", latest_image)
-
   else:
     util.run(["docker", "push", image])
     logging.info("Pushed image: %s", image)
 
     util.run(["docker", "push", latest_image])
-    logging.info("Pushed image: %s", latest_image)
+
+  logging.info("Pushed image: %s", latest_image)
 
 
 def build_and_push_artifacts(go_dir,

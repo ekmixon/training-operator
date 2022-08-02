@@ -63,9 +63,7 @@ def build_and_compile_cnn_model():
 def decay(epoch):
   if epoch < 3: #pylint: disable=no-else-return
     return 1e-3
-  if 3 <= epoch < 7:
-    return 1e-4
-  return 1e-5
+  return 1e-4 if 3 <= epoch < 7 else 1e-5
 
 
 def main(args):
@@ -94,9 +92,6 @@ def main(args):
   # Name of the checkpoint files
   checkpoint_prefix = os.path.join(checkpoint_dir, "ckpt_{epoch}")
 
-  # Function for decaying the learning rate.
-  # You can define any decay function you need.
-  # Callback for printing the LR at the end of each epoch.
   class PrintLR(tf.keras.callbacks.Callback):
 
     def on_epoch_end(self, epoch, logs=None): #pylint: disable=no-self-use
@@ -131,7 +126,7 @@ def main(args):
 
   else:
     # Save to a path that is unique across workers.
-    model_path = args.saved_model_dir + '/worker_tmp_' + str(TASK_INDEX)
+    model_path = f'{args.saved_model_dir}/worker_tmp_{str(TASK_INDEX)}'
 
   multi_worker_model.save(model_path)
 

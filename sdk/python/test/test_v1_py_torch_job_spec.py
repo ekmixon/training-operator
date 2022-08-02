@@ -33,48 +33,25 @@ class TestV1PyTorchJobSpec(unittest.TestCase):
             include_option is a boolean, when False only required
             params are included, when True both required and
             optional params are included """
-        # model = kubeflow.training.models.v1_py_torch_job_spec.V1PyTorchJobSpec()  # noqa: E501
-        if include_optional :
-            return V1PyTorchJobSpec(
-                pytorch_replica_specs = {
-                    'key' : V1ReplicaSpec(
-                        replicas = 56, 
-                        restart_policy = '0', 
-                        template = None, )
-                    }, 
-                run_policy = V1RunPolicy(
-                    active_deadline_seconds = 56, 
-                    backoff_limit = 56, 
-                    clean_pod_policy = '0', 
-                    scheduling_policy = V1SchedulingPolicy(
-                        min_available = 56, 
-                        min_resources = {
-                            'key' : None
-                            }, 
-                        priority_class = '0', 
-                        queue = '0', ), 
-                    ttl_seconds_after_finished = 56, )
-            )
-        else :
-            return V1PyTorchJobSpec(
-                pytorch_replica_specs = {
-                    'key' : V1ReplicaSpec(
-                        replicas = 56, 
-                        restart_policy = '0', 
-                        template = None, )
-                    },
-                run_policy = V1RunPolicy(
-                    active_deadline_seconds = 56, 
-                    backoff_limit = 56, 
-                    clean_pod_policy = '0', 
-                    scheduling_policy = V1SchedulingPolicy(
-                        min_available = 56, 
-                        min_resources = {
-                            'key' : None
-                            }, 
-                        priority_class = '0', 
-                        queue = '0', ), 
-                    ttl_seconds_after_finished = 56, ),
+        return V1PyTorchJobSpec(
+            pytorch_replica_specs = {
+                'key' : V1ReplicaSpec(
+                    replicas = 56, 
+                    restart_policy = '0', 
+                    template = None, )
+                }, 
+            run_policy = V1RunPolicy(
+                active_deadline_seconds = 56, 
+                backoff_limit = 56, 
+                clean_pod_policy = '0', 
+                scheduling_policy = V1SchedulingPolicy(
+                    min_available = 56, 
+                    min_resources = {
+                        'key' : None
+                        }, 
+                    priority_class = '0', 
+                    queue = '0', ), 
+                ttl_seconds_after_finished = 56, )
         )
 
     def testV1PyTorchJobSpec(self):

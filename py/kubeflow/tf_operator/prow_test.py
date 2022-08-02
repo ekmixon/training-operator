@@ -57,7 +57,7 @@ class TestProw(unittest.TestCase):
     # Verify that check no errors returns true when there are no errors
     gcs_client = mock.MagicMock(spec=storage.Client)
     artifacts_dir = "gs://some_dir"
-    mock_get_junit.return_value = set(["junit_1.xml"])
+    mock_get_junit.return_value = {"junit_1.xml"}
     mock_get_failures.return_value = 0
     junit_files = ["junit_1.xml"]
     self.assertTrue(
@@ -70,7 +70,7 @@ class TestProw(unittest.TestCase):
     # file reports an error.
     gcs_client = mock.MagicMock(spec=storage.Client)
     artifacts_dir = "gs://some_dir"
-    mock_get_junit.return_value = set(["junit_1.xml"])
+    mock_get_junit.return_value = {"junit_1.xml"}
     mock_get_failures.return_value = 1
     junit_files = ["junit_1.xml"]
     self.assertFalse(
@@ -84,7 +84,7 @@ class TestProw(unittest.TestCase):
     # junit files
     gcs_client = mock.MagicMock(spec=storage.Client)
     artifacts_dir = "gs://some_dir"
-    mock_get_junit.return_value = set(["junit_0.xml", "junit_1.xml"])
+    mock_get_junit.return_value = {"junit_0.xml", "junit_1.xml"}
     mock_get_failures.return_value = 0
     junit_files = ["junit_1.xml"]
     self.assertFalse(

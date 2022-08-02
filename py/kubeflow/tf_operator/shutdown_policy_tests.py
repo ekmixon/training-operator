@@ -84,13 +84,13 @@ class ShutdownPolicyTests(test_util.TestCase):
   # verifies that the TFJob completes.
   def test_shutdown_chief(self):
     return self.run_tfjob_with_shutdown_policy(
-      MASTER_IS_CHIEF_COMPONENT_NAME + "_" + self.tfjob_version, "chief")
+        f"{MASTER_IS_CHIEF_COMPONENT_NAME}_{self.tfjob_version}", "chief")
 
   # Tests launching a TFJob with no Chief replicas. Terminate worker 0 (which becomes chief), and
   # verifies that the TFJob completes.
   def test_shutdown_worker0(self):
     return self.run_tfjob_with_shutdown_policy(
-      WORKER0_IS_CHIEF_COMPONENT_NAME + "_" + self.tfjob_version, "worker")
+        f"{WORKER0_IS_CHIEF_COMPONENT_NAME}_{self.tfjob_version}", "worker")
 
 
 if __name__ == "__main__":

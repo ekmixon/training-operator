@@ -48,7 +48,7 @@ def run_test(test_case, test_func, args):  # pylint: disable=too-many-branches,t
       spec = "Job:\n" + json.dumps(e.job, indent=2)
     else:
       spec = "JobTimeoutError did not contain job"
-    test_case.failure = "Timeout waiting for job to finish: " + spec
+    test_case.failure = f"Timeout waiting for job to finish: {spec}"
     logging.exception(test_case.failure)
   except Exception as e:  # pylint: disable-msg=broad-except
     # TODO(jlewi): I'm observing flakes where the exception has message "status"
@@ -62,12 +62,11 @@ def run_test(test_case, test_func, args):  # pylint: disable=too-many-branches,t
     test_case.time = time.time() - start
     if args.artifacts_path:
       test_util.create_junit_xml_file(
-        [test_case],
-        args.artifacts_path + "/junit_" + test_func.__name__ + ".xml")
+          [test_case], f"{args.artifacts_path}/junit_{test_func.__name__}.xml")
 
 
 def parse_runtime_params(args):
-  salt = uuid.uuid4().hex[0:4]
+  salt = uuid.uuid4().hex[:4]
 
   if "environment" in args and args.environment:
     env = args.environment
@@ -81,7 +80,7 @@ def parse_runtime_params(args):
     if k == "name":
       name = v
 
-    if k == "namespace":
+    elif k == "namespace":
       namespace = v
 
   if not name:
@@ -157,7 +156,7 @@ def add_common_args(parser):
     help="A comma delimited list of tests to skip.")
 
 
-def main(module=None):  # pylint: disable=too-many-locals
+def main(module=None):# pylint: disable=too-many-locals
   logging.getLogger().setLevel(logging.INFO)  # pylint: disable=too-many-locals
   logging.basicConfig(
     level=logging.INFO,
@@ -173,10 +172,7 @@ def main(module=None):  # pylint: disable=too-many-locals
 
   args = parser.parse_args()
   test_module = import_module(module)
-  skip_tests = []
-  if args.skip_tests:
-    skip_tests = args.skip_tests.split(",")
-
+  skip_tests = args.skip_tests.split(",") if args.skip_tests else []
   types = dir(test_module)
   for t_name in types:
     t = getattr(test_module, t_name)
@@ -186,7 +182,7 @@ def main(module=None):  # pylint: disable=too-many-locals
       funcs = dir(test_case)
 
       for f in funcs:
-        if f.startswith("test_") and not f in skip_tests:
+        if f.startswith("test_") and f not in skip_tests:
           test_func = getattr(test_case, f)
           logging.info("Invoking test method: %s", test_func)
           run_test(test_case, test_func, args)

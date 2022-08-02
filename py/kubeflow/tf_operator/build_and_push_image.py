@@ -27,7 +27,7 @@ def GetGitHash(root_dir=None):
 
     sha = hashlib.sha256()
     sha.update(diff)
-    diffhash = sha.hexdigest()[0:7]
+    diffhash = sha.hexdigest()[:7]
     git_hash = "{0}-dirty-{1}".format(git_hash, diffhash)
 
   return git_hash
@@ -100,9 +100,9 @@ def build_and_push(dockerfile_template,
     with open(dockerfile, 'w') as hf:
       hf.write(dockerfile_contents)
 
-    full_image = image + "-" + mode
+    full_image = f"{image}-{mode}"
 
-    full_image += ":" + GetGitHash()
+    full_image += f":{GetGitHash()}"
 
     images[mode] = full_image
     if not project:
@@ -117,8 +117,12 @@ def build_and_push(dockerfile_template,
           logging.info("Pushed image: %s", full_image)
     else:
       run_and_stream([
-        "gcloud", "builds", "submit", context_dir,
-        "--tag=" + full_image, "--project=" + project
+          "gcloud",
+          "builds",
+          "submit",
+          context_dir,
+          f"--tag={full_image}",
+          f"--project={project}",
       ])
   return images
 

@@ -20,7 +20,5 @@ logger = logging.getLogger(__name__)
 def train(train_config_filepath: str):
     cmd = ["lightgbm", f"config={train_config_filepath}"]
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-    line = proc.stdout.readline()
-    while line:
+    while line := proc.stdout.readline():
         logger.info((line.decode("utf-8").strip()))
-        line = proc.stdout.readline()

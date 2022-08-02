@@ -75,7 +75,7 @@ class PyTorchJobClient(object):
         return outputs
 
     def get(self, name=None, namespace=None, watch=False,
-            timeout_seconds=600):  # pylint: disable=inconsistent-return-statements
+            timeout_seconds=600):    # pylint: disable=inconsistent-return-statements
         """
         Get the pytorchjob
         :param name: existing pytorchjob name, if not defined, get all pytorchjobs in the namespace.
@@ -116,34 +116,33 @@ class PyTorchJobClient(object):
                         "There was a problem to get PyTorchJob {0} in namespace {1}. Exception: \
                         {2} ".format(name, namespace, e))
                 return pytorchjob
+        elif watch:
+            pytorchjob_watch(
+                namespace=namespace,
+                timeout_seconds=timeout_seconds)
         else:
-            if watch:
-                pytorchjob_watch(
-                    namespace=namespace,
-                    timeout_seconds=timeout_seconds)
-            else:
-                thread = self.custom_api.list_namespaced_custom_object(
-                    constants.PYTORCHJOB_GROUP,
-                    constants.PYTORCHJOB_VERSION,
-                    namespace,
-                    constants.PYTORCHJOB_PLURAL,
-                    async_req=True)
+            thread = self.custom_api.list_namespaced_custom_object(
+                constants.PYTORCHJOB_GROUP,
+                constants.PYTORCHJOB_VERSION,
+                namespace,
+                constants.PYTORCHJOB_PLURAL,
+                async_req=True)
 
-                pytorchjob = None
-                try:
-                    pytorchjob = thread.get(constants.APISERVER_TIMEOUT)
-                except multiprocessing.TimeoutError:
-                    raise RuntimeError("Timeout trying to get PyTorchJob.")
-                except client.rest.ApiException as e:
-                    raise RuntimeError(
-                        "Exception when calling CustomObjectsApi->list_namespaced_custom_object: \
+            pytorchjob = None
+            try:
+                pytorchjob = thread.get(constants.APISERVER_TIMEOUT)
+            except multiprocessing.TimeoutError:
+                raise RuntimeError("Timeout trying to get PyTorchJob.")
+            except client.rest.ApiException as e:
+                raise RuntimeError(
+                    "Exception when calling CustomObjectsApi->list_namespaced_custom_object: \
                         %s\n" % e)
-                except Exception as e:
-                    raise RuntimeError(
-                        "There was a problem to List PyTorchJob in namespace {0}. \
+            except Exception as e:
+                raise RuntimeError(
+                    "There was a problem to List PyTorchJob in namespace {0}. \
                         Exception: {1} ".format(namespace, e))
 
-                return pytorchjob
+            return pytorchjob
 
     def patch(self, name, pytorchjob, namespace=None):
         """
@@ -335,15 +334,14 @@ class PyTorchJobClient(object):
             raise RuntimeError(
                 "Exception when calling CoreV1Api->read_namespaced_pod_log: %s\n" % e)
 
-        pod_names = []
-        for pod in resp.items:
-            if pod.metadata and pod.metadata.name:
-                pod_names.append(pod.metadata.name)
-
-        if not pod_names:
-            logging.warning("Not found Pods of the PyTorchJob %s with the labels %s.", name, labels)
-        else:
+        if pod_names := [
+            pod.metadata.name
+            for pod in resp.items
+            if pod.metadata and pod.metadata.name
+        ]:
             return set(pod_names)
+        else:
+            logging.warning("Not found Pods of the PyTorchJob %s with the labels %s.", name, labels)
 
     def get_logs(self, name, namespace=None, master=True,
                  replica_type=None, replica_index=None,
@@ -366,20 +364,24 @@ class PyTorchJobClient(object):
         if namespace is None:
             namespace = utils.get_default_target_namespace()
 
-        pod_names = self.get_pod_names(name, namespace=namespace,
-                                       master=master,
-                                       replica_type=replica_type,
-                                       replica_index=replica_index)
+        if not (
+            pod_names := self.get_pod_names(
+                name,
+                namespace=namespace,
+                master=master,
+                replica_type=replica_type,
+                replica_index=replica_index,
+            )
+        ):
+            raise RuntimeError(
+                f"Not found Pods of the PyTorchJob {name} in namespace {namespace}"
+            )
 
-        if pod_names:
-            for pod in pod_names:
-                try:
-                    pod_logs = self.core_api.read_namespaced_pod_log(
-                        pod, namespace, follow=follow, container=container)
-                    logging.info("The logs of Pod %s:\n %s", pod, pod_logs)
-                except client.rest.ApiException as e:
-                    raise RuntimeError(
-                        "Exception when calling CoreV1Api->read_namespaced_pod_log: %s\n" % e)
-        else:
-            raise RuntimeError("Not found Pods of the PyTorchJob {} "
-                               "in namespace {}".format(name, namespace))
+        for pod in pod_names:
+            try:
+                pod_logs = self.core_api.read_namespaced_pod_log(
+                    pod, namespace, follow=follow, container=container)
+                logging.info("The logs of Pod %s:\n %s", pod, pod_logs)
+            except client.rest.ApiException as e:
+                raise RuntimeError(
+                    "Exception when calling CoreV1Api->read_namespaced_pod_log: %s\n" % e)

@@ -131,19 +131,18 @@ def dump_model(model, type, model_path, args):
     """
     if model is None:
         raise Exception("fail to get the XGBoost train model")
-    else:
-        if type == "local":
-            joblib.dump(model, model_path)
-            logging.info("Dump model into local place %s", model_path)
+    if type == "local":
+        joblib.dump(model, model_path)
+        logging.info("Dump model into local place %s", model_path)
 
-        elif type == "oss":
-            oss_param = parse_parameters(args.oss_param, ",", ":")
-            if oss_param is None:
-                raise Exception("Please config oss parameter to store model")
+    elif type == "oss":
+        oss_param = parse_parameters(args.oss_param, ",", ":")
+        if oss_param is None:
+            raise Exception("Please config oss parameter to store model")
 
-            oss_param['path'] = args.model_path            
-            dump_model_to_oss(oss_param, model)
-            logging.info("Dump model into oss place %s", args.model_path)
+        oss_param['path'] = args.model_path            
+        dump_model_to_oss(oss_param, model)
+        logging.info("Dump model into oss place %s", args.model_path)
 
     return True
 
@@ -165,8 +164,6 @@ def read_model(type, model_path, args):
         oss_param = parse_parameters(args.oss_param, ",", ":")
         if oss_param is None:
             raise Exception("Please config oss to read model")
-            return False
-
         oss_param['path'] = args.model_path        
 
         model = read_model_from_oss(oss_param)
@@ -210,8 +207,6 @@ def dump_model_to_oss(oss_parameters, booster):
         upload_oss(oss_parameters, feature_importance, aux_path)
     else:
         raise Exception("fail to generate model")
-        return False
-
     return True
 
 
@@ -224,7 +219,7 @@ def upload_oss(kw, local_file, oss_path):
     :return: True if the procedure is success
     """
     if oss_path[-1] == '/':
-        oss_path = '%s%s' % (oss_path, os.path.basename(local_file))
+        oss_path = f'{oss_path}{os.path.basename(local_file)}'
 
     auth = oss2.Auth(kw['access_id'], kw['access_key'])
     bucket = kw['access_bucket']
@@ -232,11 +227,12 @@ def upload_oss(kw, local_file, oss_path):
 
     try:
         bkt.put_object_from_file(key=oss_path, filename=local_file)
-        logger.info("upload %s to %s successfully!" %
-                    (os.path.abspath(local_file), oss_path))
+        logger.info(
+            f"upload {os.path.abspath(local_file)} to {oss_path} successfully!"
+        )
+
     except Exception():
-        raise ValueError('upload %s to %s failed' %
-                         (os.path.abspath(local_file), oss_path))
+        raise ValueError(f'upload {os.path.abspath(local_file)} to {oss_path} failed')
 
 
 def read_model_from_oss(kw):
@@ -281,8 +277,8 @@ def parse_parameters(input, splitter_between, splitter_in):
     for kv in ky_pairs:
         conf = kv.split(splitter_in)
         key = conf[0].strip(" ")
-        if key == "objective" or key == "endpoint":
-            value = conf[1].strip("'") + ":" + conf[2].strip("'")       
+        if key in ["objective", "endpoint"]:
+            value = conf[1].strip("'") + ":" + conf[2].strip("'")
         else:
             value = conf[1]
 

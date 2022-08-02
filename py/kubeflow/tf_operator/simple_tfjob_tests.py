@@ -62,10 +62,8 @@ class SimpleTfJobTests(test_util.TestCase):
       logging.error(self.failure)
       return
 
-    # Check for creation failures.
-    creation_failures = tf_job_client.get_creation_failures_from_tfjob(
-      api_client, self.namespace, results)
-    if creation_failures:
+    if creation_failures := tf_job_client.get_creation_failures_from_tfjob(
+        api_client, self.namespace, results):
       # TODO(jlewi): Starting with
       # https://github.com/kubeflow/training-operator/pull/646 the number of events
       # no longer seems to match the expected; it looks like maybe events
@@ -87,7 +85,7 @@ class SimpleTfJobTests(test_util.TestCase):
 
   # Run a generic TFJob, wait for it to complete, and check for pod/service creation errors.
   def test_simple_tfjob_cpu(self):
-    self.run_simple_tfjob(CPU_TFJOB_COMPONENT_NAME + "_" + self.tfjob_version)
+    self.run_simple_tfjob(f"{CPU_TFJOB_COMPONENT_NAME}_{self.tfjob_version}")
 
   # Run a generic TFJob, wait for it to complete, and check for pod/service creation errors.
   # def test_simple_tfjob_gpu(self):
